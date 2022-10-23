@@ -30,7 +30,7 @@ COPY cmake-3.22.0-linux-x86_64.tar.gz /home/ubuntu
 RUN tar -xzvf cmake-3.22.0-linux-x86_64.tar.gz
 
 # Get UERANSIM
-RUN git clone -b v3.1.0 https://github.com/aligungr/UERANSIM
+RUN git clone -b v3.1.0 https://gitee.com/wlwdhr/github_ueransim.git
 
 # make
 COPY makefile ./UERANSIM
