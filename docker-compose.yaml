@@ -1,0 +1,105 @@
+version: '2.4'
+
+# ports:
+#   38412:  sctp      CNCPP - RAN
+#   8805:   udp       CNCPP - UPF
+#   4997:   udp       RAN   - UE
+#   2152:   udp       RAN   - UPF
+#   8016:   tcp       Nginx - Local
+#   30303:  udp tcp   ETH   - Other nodes
+
+services:
+  Ethereum:
+    container_name: bc5gc-eth
+    image: bc5gc/ethereum100users:0.1.0
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        /root/works/go-ethereum/build/bin/geth --datadir /root/works/data/ethereum/ --networkid 1895 --allow-insecure-unlock --rpc --rpcapi "admin,debug,eth,miner,net,personal,txpool,web3" --rpccorsdomain "*" --cache 4 --rpcvhosts "*" --rpcaddr "0.0.0.0" > /dev/null 2>&1
+    networks:
+      ethtest_privnet:
+        ipv4_address: 11.11.11.20
+
+    cpu_quota: 50ms
+    cpu_period: 100ms
+    cpuset: "0"
+    mem_limit: 500m
+
+  Nginx:
+    container_name: bc5gc-nginx
+    image: nginx:latest
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        nginx -c /etc/nginx/nginx.conf -g "daemon off;" > /dev/null
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    networks:
+      ethtest_privnet:
+        ipv4_address: 11.11.11.10
+    # ports:
+    #   - "8016:8016"
+    depends_on:
+      - Ethereum
+
+    cpu_quota: 5ms
+    cpu_period: 100ms
+    cpuset: "1"
+    mem_limit: 50m
+  
+  CNCPP:
+    container_name: bc5gc-cncpp
+    # privileged: true
+    image: bc5gc/cncpp:0.1.0
+    working_dir: /home/ubuntu/cn_spk
+    command: ./cncpp
+    volumes:
+      - ./amfcfg.yaml:/home/ubuntu/cn_spk/amfcfg.yaml
+      - ./smfcfg.yaml:/home/ubuntu/cn_spk/smfcfg.yaml
+      - ./nginxaddr.txt:/home/ubuntu/cn_spk/nginxaddr.txt
+      - ./sqn.txt:/home/ubuntu/cn_spk/sqn.txt
+    # network_mode: "host"
+    networks:
+      ethtest_privnet:
+        ipv4_address: 11.11.11.3
+    # ports:
+    #   - "38412:38412/sctp"
+    depends_on:
+      - Nginx
+
+    cpu_quota: 50ms
+    cpu_period: 100ms
+    cpuset: "1"
+    mem_limit: 500m
+
+  UERANSIM:
+    container_name: bc5gc-ueran
+    image: bc5gc/ueran:0.1.0
+    privileged: true
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        sleep 2
+        /home/ubuntu/github_ueransim/build/nr-gnb -c /home/ubuntu/github_ueransim/config/free5gc-gnb.yaml &
+        sleep 2
+        echo "ue" | sudo -S /home/ubuntu/github_ueransim/build/nr-ue -c /home/ubuntu/github_ueransim/config/free5gc-ue.yaml -n 3
+    volumes:
+      - ./free5gc-gnb.yaml:/home/ubuntu/github_ueransim/config/free5gc-gnb.yaml
+      - ./free5gc-ue.yaml:/home/ubuntu/github_ueransim/config/free5gc-ue.yaml
+    # ports:
+    #   - "4997:4997/udp"
+    networks:
+      ethtest_privnet:
+        ipv4_address: 11.11.11.231
+    depends_on:
+      - CNCPP
+      
+    # cpuset: "1"
+    # mem_limit: 500m
+
+networks:
+  ethtest_privnet:
+    external: true
