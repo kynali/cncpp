@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 LABEL maintainer="kynali <https://github.com/kynali>" \
     description="CNCPP-5G-AKA" \

@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 LABEL maintainer="<https://github.com/aligungr/UERANSIM>" \
     description="UERANSIM-5G-AKA from Free5gc" \
