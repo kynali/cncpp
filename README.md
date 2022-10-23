@@ -8,4 +8,5 @@ Dependency:
 
 Run:
     sudo make
-    go 
+    cd n4
+    go run n4.go
